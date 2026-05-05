@@ -3,6 +3,10 @@
 
 > Eliminating 30-day payment delays for 75 rice farmers in Nueva Ecija, Central Luzon, Philippines through transparent, on-chain cooperative payouts powered by Soroban smart contracts.
 
+**Deployed on Stellar Testnet**
+- Transaction: [`2eacd358...`](https://stellar.expert/explorer/testnet/tx/2eacd3587b7a5f4cb127e5adcafbd6a26d57e77e238f4e5242c004521cdaf3bc)
+- Contract: [`CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2`](https://lab.stellar.org/r/testnet/contract/CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2)
+
 ---
 
 ## Problem
@@ -32,26 +36,86 @@ Farmers receive USDC the moment the mill pays the cooperative. No waiting. No di
 
 ---
 
-## Stellar Features Used
+## How the Contract Works
 
-| Feature | Usage |
-|---|---|
-| **Soroban Smart Contracts** | Core logic — delivery logging, share calculation, payment disbursement |
-| **USDC Transfers** | Stablecoin payouts to farmer wallets (pegged to PHP via anchor) |
-| **XLM** | Gas fees for contract execution |
-| **Custom Token (AGRI)** | Optional cooperative membership token for governance |
-| **Trustlines** | Farmer wallets establish trustline to USDC before receiving payment |
-| **Clawback / Compliance** | Admin can flag inactive members and prevent erroneous payouts |
+### Contract Functions
+
+| Function | Caller | Description |
+|---|---|---|
+| `initialize` | Admin (once) | Sets the admin wallet and USDC token contract address |
+| `register_farmer` | Admin | Adds a farmer's Stellar wallet and name to the cooperative registry |
+| `log_delivery` | Admin | Records kg delivered by a farmer for a specific batch ID |
+| `disburse_payments` | Admin | Triggers proportional USDC payouts to all farmers in a batch |
+| `get_payment_record` | Anyone | Returns cumulative USDC received by a specific farmer wallet |
+
+### Payment Calculation
+
+Each farmer's payout is calculated proportionally based on their harvest contribution to the batch:
+
+```
+farmer_share = (farmer_kg / total_batch_kg) × total_usdc_from_mill
+```
+
+This happens entirely on-chain — no spreadsheets, no manual calculations, no disputes.
+
+### Authorization Model
+
+The contract uses a **single admin + on-chain authorization** model:
+
+- The `admin` wallet is set once at `initialize` and cannot be changed
+- Only the `admin` can call `register_farmer`, `log_delivery`, and `disburse_payments`
+- All other wallets (farmers, auditors, anyone) can call `get_payment_record` to verify payouts
+- Soroban's native auth framework (`admin.require_auth()`) enforces this — any call from a non-admin wallet is rejected at the protocol level before execution
+
+This means:
+- The cooperative board controls disbursement (admin key)
+- Every farmer can independently verify their own payment history without trusting the admin
+- Every transaction is permanently recorded on the Stellar ledger and publicly auditable
+
+### Multi-Signature Upgrade Path
+
+For production deployments, the admin key can be replaced with a **multisig account** on Stellar, requiring M-of-N board members to co-sign any disbursement transaction. This is achieved by:
+
+1. Creating a Stellar account with multiple signers (e.g., 3 of 5 cooperative board members)
+2. Setting that multisig account as the `admin` during `initialize`
+3. Any call to `disburse_payments` will then require M signatures before Soroban executes the contract function
+
+No contract code changes are needed — Stellar's account model handles the multisig enforcement at the transaction layer.
 
 ---
 
-## Vision and Purpose
+## Sample Use Case — Batch Harvest, July 2026
 
-Smallholder farmers are the backbone of Philippine agriculture yet they are the last to be paid and the first to be exploited. A.G.R.I. Cooperative proves that blockchain is not just for crypto traders — it is infrastructure for rural economic justice.
+**Setup:** 3 farmers registered. Rice mill pays the cooperative ₱50,000 (~$900 USDC) for Batch #7.
 
-By anchoring cooperative payments to Stellar's fast, low-cost network, every harvest becomes an on-chain record. Every payout becomes auditable. Every farmer becomes their own bank.
+| Farmer | Wallet | kg Delivered | Share |
+|---|---|---|---|
+| Juan Dela Cruz | `GBZX...JPCR` | 300 kg | 30% → 270 USDC |
+| Maria Santos | `GCAB...MNOP` | 500 kg | 50% → 450 USDC |
+| Pedro Reyes | `GDXY...QRST` | 200 kg | 20% → 180 USDC |
+| **Total** | | **1,000 kg** | **900 USDC** |
 
-The long-term vision is to expand this model to rice cooperatives across Central Luzon, then to corn, sugarcane, and vegetable cooperatives across the Philippines and Southeast Asia — giving millions of smallholder farmers the financial transparency and immediacy they have always deserved.
+**Step-by-step execution:**
+
+```
+1. Admin calls log_delivery(Juan,   kg=300, batch_id=7)
+2. Admin calls log_delivery(Maria,  kg=500, batch_id=7)
+3. Admin calls log_delivery(Pedro,  kg=200, batch_id=7)
+
+4. Mill transfers 900 USDC to cooperative wallet
+
+5. Admin calls disburse_payments(batch_id=7, total_usdc=9000000000)
+   → Contract calculates shares on-chain
+   → 270 USDC sent to Juan's wallet   ✓
+   → 450 USDC sent to Maria's wallet  ✓
+   → 180 USDC sent to Pedro's wallet  ✓
+   → Payment events emitted to ledger ✓
+
+6. Any farmer calls get_payment_record(wallet) to verify
+```
+
+**Before A.G.R.I.:** Juan waits 30 days and receives whatever the middleman decides.
+**After A.G.R.I.:** Juan receives 270 USDC within minutes of the mill paying, with a permanent on-chain receipt.
 
 ---
 
@@ -72,6 +136,29 @@ Payment event emitted → cumulative record updated
 ```
 
 **Demo runtime: under 2 minutes.**
+
+---
+
+## Stellar Features Used
+
+| Feature | Usage |
+|---|---|
+| **Soroban Smart Contracts** | Core logic — delivery logging, share calculation, payment disbursement |
+| **USDC Transfers** | Stablecoin payouts to farmer wallets (pegged to PHP via anchor) |
+| **XLM** | Gas fees for contract execution |
+| **Custom Token (AGRI)** | Optional cooperative membership token for governance |
+| **Trustlines** | Farmer wallets establish trustline to USDC before receiving payment |
+| **Clawback / Compliance** | Admin can flag inactive members and prevent erroneous payouts |
+
+---
+
+## Vision and Purpose
+
+Smallholder farmers are the backbone of Philippine agriculture yet they are the last to be paid and the first to be exploited. A.G.R.I. Cooperative proves that blockchain is not just for crypto traders — it is infrastructure for rural economic justice.
+
+By anchoring cooperative payments to Stellar's fast, low-cost network, every harvest becomes an on-chain record. Every payout becomes auditable. Every farmer becomes their own bank.
+
+The long-term vision is to expand this model to rice cooperatives across Central Luzon, then to corn, sugarcane, and vegetable cooperatives across the Philippines and Southeast Asia — giving millions of smallholder farmers the financial transparency and immediacy they have always deserved.
 
 ---
 
@@ -114,7 +201,7 @@ soroban --version     # soroban 21.x or later
 Compile the contract to a Wasm binary optimized for deployment:
 
 ```bash
-soroban contract build
+stellar contract build --manifest-path contracts/agri_cooperative/Cargo.toml
 ```
 
 The compiled output will be at:
@@ -229,6 +316,16 @@ soroban contract invoke \
   --farmer GBZX4364PEPQTDICMIQDZ56K4T75QZCR4NBEYKO6PDRJAHZKGUOJPCR
 ```
 
+---
+
+## Reference Links
+
+- Soroban IDE: [soroban.studio](https://soroban.studio/)
+- Soroban documentation: [developers.stellar.org/docs/smart-contracts](https://developers.stellar.org/docs/smart-contracts)
+- Stellar Expert (testnet): [stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet)
+- Stellar Lab: [lab.stellar.org](https://lab.stellar.org)
+
+---
 
 ## License
 
@@ -241,8 +338,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-##CONTRACT
-https://stellar.expert/explorer/testnet/tx/2eacd3587b7a5f4cb127e5adcafbd6a26d57e77e238f4e5242c004521cdaf3bc
-
-https://lab.stellar.org/r/testnet/contract/CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2
