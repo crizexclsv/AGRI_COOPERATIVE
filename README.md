@@ -8,8 +8,9 @@
 - Contract: [`CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2`](https://lab.stellar.org/r/testnet/contract/CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2)
 
 ---
-##Description
-Tokenized rice farmer payments on Stellar — eliminating 30-day payment delays for 75 smallholder farmers in Nueva Ecija, Philippines via Soroban smart contracts and USDC disbursement.
+## Description
+
+>Tokenized rice farmer payments on Stellar — eliminating 30-day payment delays for 75 smallholder farmers in Nueva Ecija, Philippines via Soroban smart contracts and USDC disbursement.
 
 ---
 
@@ -343,6 +344,6 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-##Contract
+## Contract
 https://stellar.expert/explorer/testnet/tx/6fe69882aecdf57fe192516b7d8e9f31b008a774fd1ee0a94ddd68a5c333aa53
 🔗 https://lab.stellar.org/r/testnet/contract/CBPIAXN6MPKNCANW2MTKWI6LMKC5AWITVBPP754IMKUN2EZJSJJFWW22
