@@ -8,6 +8,10 @@
 - Contract: [`CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2`](https://lab.stellar.org/r/testnet/contract/CBVARIHEJFR3NPP5K67WMDPHU7PBLRRHUXJQVHZUXJ3AUT74A3SDYVE2)
 
 ---
+##Description
+Tokenized rice farmer payments on Stellar — eliminating 30-day payment delays for 75 smallholder farmers in Nueva Ecija, Philippines via Soroban smart contracts and USDC disbursement.
+
+---
 
 ## Problem
 
